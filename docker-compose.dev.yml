@@ -1,0 +1,52 @@
+# Dev overlay. Not auto-applied by Compose (that's only docker-compose.override.yml,
+# and this is named docker-compose.dev.yml for consistency with
+# docker-compose.prod.yml instead). Flag-free `docker compose up` for dev is
+# restored via COMPOSE_FILE in .env — see .env.example. Adds the two frontend
+# services — which exist *only* here, never in prod — plus build-mode and
+# host-published ports for backend/db.
+#
+# staff and website already bake this same Dockerfile pattern (non-root
+# `node` user, node_modules as a named volume — see
+# orchestration/human/lessons_learnerd.md #4). backend has no Dockerfile yet
+# (project_decisions.md: "Go backend — to be built"); the service below is a
+# placeholder until one exists.
+
+services:
+  db:
+    ports:
+      - "5432:5432" # host access for psql / a GUI client
+
+  backend:
+    build:
+      context: ../backend
+    volumes:
+      - ../backend:/app
+    ports:
+      - "8080:8080"
+    # TODO: backend/Dockerfile doesn't exist yet — this service won't build
+    # until it does. Once it does, this command line should go away in favour
+    # of whatever the Dockerfile's own CMD/dev entrypoint is (e.g. a hot
+    # reload tool), matching the pattern staff/nuxt already use below.
+
+  sveltekit:
+    build:
+      context: ../staff
+    volumes:
+      - ../staff:/app
+      - staff-node_modules:/app/node_modules
+    ports:
+      - "5173:5173" # Vite
+      - "6006:6006" # Storybook
+
+  nuxt:
+    build:
+      context: ../website
+    volumes:
+      - ../website:/app
+      - website-node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+
+volumes:
+  staff-node_modules:
+  website-node_modules:

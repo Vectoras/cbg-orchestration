@@ -163,6 +163,28 @@ Two separate applications, in separate repositories, for different audiences.
   free tier** (approximately 10,000 active series, 14-day retention).
 - Dashboards and storage are managed by Grafana Cloud rather than self-hosted.
 
+### 3.10 Repository layout
+
+- The orchestration repository and the app repositories are checked out as
+  **sibling directories** on disk, not nested inside one another:
+  ```
+  workspace/
+    orchestration/   (this repo)
+    backend/
+    website/
+    staff/
+  ```
+- App repositories are **not tracked by the orchestration repo and not added as
+  git submodules** — they are just cloned alongside it. Compose files in the
+  orchestration repo reference them with relative paths (e.g. `../backend`) for
+  build contexts.
+- **Ruled out: nesting app repos as directories inside the orchestration repo.**
+  `git clone` refuses to clone into a non-empty directory, which conflicts with
+  tracking placeholder directories for them; and an untracked nested `.git`
+  risks `git add -A` accidentally staging it as a bare gitlink pointing at a
+  commit with no `.gitmodules` entry to explain it. Sibling directories avoid
+  both problems.
+
 ---
 
 ## 4. Open questions
@@ -191,10 +213,10 @@ candidate approach is a three-file layout:
 - a prod overlay, applied explicitly on the VPS, using pre-built registry images
   and per-service memory limits.
 
-Related sub-questions: whether local development brings up all services with a
-single command; and how the orchestration repository references the app
-repositories for build contexts (for example, sibling-directory cloning with
-relative paths, kept out of version control).
+Related sub-question: whether local development brings up all services with a
+single command. (How the orchestration repository references the app
+repositories is now settled — sibling-directory cloning, kept out of version
+control — see 3.10.)
 
 Useful mechanics to bear in mind when deciding: Compose merges files left to
 right; scalar values are overridden, maps are merged key by key, and **lists are

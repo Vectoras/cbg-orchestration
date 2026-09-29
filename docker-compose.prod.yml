@@ -1,0 +1,23 @@
+# Prod overlay. Applied explicitly on the VPS — never auto-merged:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Only backend + db run in prod (project_decisions.md §3.7); staff and
+# website are built and deployed separately through their own CI to external
+# hosts, so they never appear in this file.
+#
+# Memory split for the 1GB VPS ceiling (project_decisions.md §2) — a
+# provisional split, not a measured one. Revisit once the Grafana Cloud
+# metrics agent (§3.9) shows real usage; ~374m is left for the OS and the
+# Docker daemon itself.
+
+services:
+  db:
+    mem_limit: 350m
+    restart: unless-stopped
+
+  backend:
+    image: ${BACKEND_IMAGE:?set BACKEND_IMAGE to the registry ref, e.g. ghcr.io/<org>/cornerstone-backend:1.2.3}
+    mem_limit: 300m
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
